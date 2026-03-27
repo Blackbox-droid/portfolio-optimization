@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 
 from .config import (
     ASSETS,
+    ASSET_COLORS,
     NUM_REGIMES,
     PCA_VARIANCE_THRESHOLD,
     RANDOM_STATE,
@@ -154,14 +155,10 @@ def detect_regimes(
         ASSETS,
     )
 
-    X_train = train_data[feature_cols].values
-    X_test = test_data[feature_cols].values
-
     feature_train = train_data[feature_cols]
-    feature_test = test_data[feature_cols]
     regime_model = fit_regime_model(feature_train)
     Z_train = regime_model["pca"].transform(regime_model["scaler"].transform(feature_train.values))
-    Z_test = regime_model["pca"].transform(regime_model["scaler"].transform(feature_test.values))
+    Z_test = regime_model["pca"].transform(regime_model["scaler"].transform(test_data[feature_cols].values))
     train_clusters = regime_model["gmm"].predict(Z_train)
     test_clusters = regime_model["gmm"].predict(Z_test)
     train_probs = regime_model["gmm"].predict_proba(Z_train)
@@ -277,14 +274,8 @@ def plot_regime_timeline(
     handles = [Patch(color=REGIME_COLORS[regime], label=regime) for regime in REGIME_NAMES]
     axes[0].legend(handles=handles, loc="upper left", ncol=4, fontsize=9)
 
-    colors = {
-        "Nifty50_USD": "#1f77b4",
-        "SP500": "#ff7f0e",
-        "Gold": "#FFD700",
-        "USBond": "#2ca02c",
-    }
     for asset in ASSETS:
-        axes[1].plot(normalized.index, normalized[asset], label=asset, linewidth=1.7, color=colors[asset])
+        axes[1].plot(normalized.index, normalized[asset], label=asset, linewidth=1.7, color=ASSET_COLORS[asset])
 
     axes[1].set_ylabel("Normalized Price (Base = 100)")
     axes[1].set_title("Asset Performance Across Regimes", fontweight="bold")

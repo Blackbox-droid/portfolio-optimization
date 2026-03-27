@@ -49,18 +49,5 @@ def solve_markowitz(
             continue
 
     return _equal_weight_with_bounds(bounds)
-
-
-def static_classical_markowitz_weights(
-    train_simple_returns,
-    gamma: float = RISK_AVERSION_GAMMA,
-) -> np.ndarray:
-    mu = train_simple_returns.mean().reindex(ASSETS).values.astype(float)
-    cov = train_simple_returns[ASSETS].cov().values.astype(float)
-    bounds = {asset: (0.0, 1.0) for asset in ASSETS}
-    return solve_markowitz(mu, cov, bounds=bounds, gamma=gamma)
-
-
 def regime_bounds_for(regime: str) -> dict[str, tuple[float, float]]:
     return REGIME_BOUNDS.get(regime, REGIME_BOUNDS["Growth"])
-

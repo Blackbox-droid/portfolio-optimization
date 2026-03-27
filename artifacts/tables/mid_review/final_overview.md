@@ -27,4 +27,4 @@
 - `ClassicalMarkowitz`: total return `56.2%`, ann. return `46.6%`, Sharpe `5.50`, Max DD `-0.4%`
 
 ## Interpretation
-The strongest walk-forward benchmark on this test slice is `ClassicalMarkowitz` by Sharpe ratio, so the regime-aware strategy should still be presented as a working prototype with preliminary results.
+The strongest walk-forward benchmark on this test slice is `ClassicalMarkowitz` by Sharpe ratio.

@@ -7,7 +7,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from portfolio_optimization.config import FIGURES_DIR, TABLES_DIR
+from portfolio_optimization.config import FIGURE_OUTPUTS, TABLE_OUTPUTS
 from portfolio_optimization.data_io import (
     ensure_output_dirs,
     load_asset_frames,
@@ -38,18 +38,14 @@ def main() -> None:
         merged_test,
     )
 
-    labels_path = TABLES_DIR / "regime_labels.csv"
-    stats_path = TABLES_DIR / "regime_asset_stats.csv"
-    figure_path = FIGURES_DIR / "regime_timeline.png"
-
-    save_dataframe(labels_df, labels_path, index=False)
-    save_dataframe(stats_df, stats_path, index=False)
-    plot_regime_timeline(labels_df, asset_train, asset_test, figure_path)
+    save_dataframe(labels_df, TABLE_OUTPUTS["regime_labels"], index=False)
+    save_dataframe(stats_df, TABLE_OUTPUTS["regime_asset_stats"], index=False)
+    plot_regime_timeline(labels_df, asset_train, asset_test, FIGURE_OUTPUTS["regime_timeline"])
 
     print("Saved regime detection outputs:")
-    print(f"  {labels_path}")
-    print(f"  {stats_path}")
-    print(f"  {figure_path}")
+    print(f"  {TABLE_OUTPUTS['regime_labels']}")
+    print(f"  {TABLE_OUTPUTS['regime_asset_stats']}")
+    print(f"  {FIGURE_OUTPUTS['regime_timeline']}")
     print("Diagnostics:")
     for key, value in diagnostics.items():
         print(f"  {key}: {value}")
@@ -57,4 +53,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

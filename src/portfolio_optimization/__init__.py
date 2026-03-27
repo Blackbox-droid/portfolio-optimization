@@ -1,2 +1,1 @@
-"""Mid-review portfolio optimization package."""
-
+"""Portfolio optimization package."""

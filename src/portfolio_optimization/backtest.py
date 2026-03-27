@@ -3,27 +3,15 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.patches import Patch
 
-from .config import ASSETS, REGIME_COLORS, REGIME_NAMES
+from .config import ASSETS, ASSET_COLORS, REGIME_COLORS, REGIME_NAMES, STRATEGY_COLORS, STRATEGY_ORDER
 from .metrics import cumulative_wealth, drawdown_series, log_to_simple, summarize_strategy
 from .models import walk_forward_supervised_predictions
 from .optimize import regime_bounds_for, solve_markowitz
 from .regimes import walk_forward_regime_predictions
 
 
-def choose_best_prediction_columns(metrics_df: pd.DataFrame) -> dict[str, str]:
-    best = {}
-    for asset, group in metrics_df.groupby("Asset"):
-        row = group.sort_values(["Test_RMSE", "Dir_Accuracy"], ascending=[True, False]).iloc[0]
-        best[asset] = f"{asset}_{row['Model']}"
-    return best
-
-
-def build_expected_return_matrix(predictions_df: pd.DataFrame, metrics_df: pd.DataFrame) -> pd.DataFrame:
-    selected_cols = choose_best_prediction_columns(metrics_df)
-    frame = pd.DataFrame({"Date": pd.to_datetime(predictions_df["Date"])})
-    for asset in ASSETS:
-        frame[asset] = predictions_df[selected_cols[asset]].values
-    return frame.set_index("Date")
+def _strategy_metric_column(strategy: str, suffix: str) -> str:
+    return f"{strategy}_{suffix}"
 
 
 def _wide_predictions(prediction_rows: pd.DataFrame) -> pd.DataFrame:
@@ -122,12 +110,12 @@ def run_walk_forward_backtest(
     backtest_returns = pd.DataFrame(strategy_rows).set_index("Date").sort_index()
     weights_df = pd.DataFrame(weight_rows).set_index("Date").sort_index()
 
-    for strategy in ["RegimeAware_ML", "EqualWeight", "ClassicalMarkowitz"]:
+    for strategy in STRATEGY_ORDER:
         backtest_returns[f"{strategy}_CumulativeWealth"] = cumulative_wealth(backtest_returns[strategy])
         backtest_returns[f"{strategy}_Drawdown"] = drawdown_series(backtest_returns[strategy])
 
     summary_rows = []
-    for strategy in ["RegimeAware_ML", "EqualWeight", "ClassicalMarkowitz"]:
+    for strategy in STRATEGY_ORDER:
         metrics = summarize_strategy(backtest_returns[strategy])
         summary_rows.append({"Strategy": strategy, **metrics})
 
@@ -153,12 +141,15 @@ def plot_cumulative_returns(backtest_returns: pd.DataFrame, output_path) -> None
     df["Date"] = pd.to_datetime(df["Date"])
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    for strategy, color in [
-        ("RegimeAware_ML_CumulativeWealth", "#1f77b4"),
-        ("EqualWeight_CumulativeWealth", "#ff7f0e"),
-        ("ClassicalMarkowitz_CumulativeWealth", "#2ca02c"),
-    ]:
-        ax.plot(df["Date"], df[strategy], linewidth=2, label=strategy.replace("_CumulativeWealth", ""), color=color)
+    for strategy in STRATEGY_ORDER:
+        color = STRATEGY_COLORS[strategy]
+        ax.plot(
+            df["Date"],
+            df[_strategy_metric_column(strategy, "CumulativeWealth")],
+            linewidth=2,
+            label=strategy,
+            color=color,
+        )
 
     ax.set_title("Walk-Forward Cumulative Wealth Comparison (Test: 2025-2026)", fontweight="bold")
     ax.set_ylabel("Wealth (Base = 1.0)")
@@ -174,12 +165,15 @@ def plot_drawdowns(backtest_returns: pd.DataFrame, output_path) -> None:
     df["Date"] = pd.to_datetime(df["Date"])
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    for strategy, color in [
-        ("RegimeAware_ML_Drawdown", "#1f77b4"),
-        ("EqualWeight_Drawdown", "#ff7f0e"),
-        ("ClassicalMarkowitz_Drawdown", "#2ca02c"),
-    ]:
-        ax.plot(df["Date"], df[strategy], linewidth=2, label=strategy.replace("_Drawdown", ""), color=color)
+    for strategy in STRATEGY_ORDER:
+        color = STRATEGY_COLORS[strategy]
+        ax.plot(
+            df["Date"],
+            df[_strategy_metric_column(strategy, "Drawdown")],
+            linewidth=2,
+            label=strategy,
+            color=color,
+        )
 
     ax.set_title("Walk-Forward Drawdown Comparison (Test: 2025-2026)", fontweight="bold")
     ax.set_ylabel("Drawdown")
@@ -222,17 +216,11 @@ def plot_portfolio_weights(weights_df: pd.DataFrame, output_path) -> None:
         fontsize=9,
     )
 
-    colors = {
-        "Nifty50_USD": "#1f77b4",
-        "SP500": "#ff7f0e",
-        "Gold": "#FFD700",
-        "USBond": "#2ca02c",
-    }
     axes[1].stackplot(
         df["Date"],
         [df[asset].values for asset in ASSETS],
         labels=ASSETS,
-        colors=[colors[asset] for asset in ASSETS],
+        colors=[ASSET_COLORS[asset] for asset in ASSETS],
         alpha=0.9,
     )
     axes[1].set_ylim(0, 1)
