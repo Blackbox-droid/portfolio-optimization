@@ -119,28 +119,6 @@ def fit_regime_model(feature_frame: pd.DataFrame) -> dict:
     }
 
 
-def predict_regime_from_model(model_bundle: dict, feature_row: pd.Series) -> dict:
-    row_df = feature_row.to_frame().T
-    scaled = model_bundle["scaler"].transform(row_df.values)
-    latent = model_bundle["pca"].transform(scaled)
-    cluster = int(model_bundle["gmm"].predict(latent)[0])
-    raw_probs = model_bundle["gmm"].predict_proba(latent)[0]
-    regime = model_bundle["cluster_to_regime"][cluster]
-
-    regime_probs = {f"prob_{name}": 0.0 for name in REGIME_NAMES}
-    for cluster_idx, probability in enumerate(raw_probs):
-        mapped_regime = model_bundle["cluster_to_regime"][cluster_idx]
-        regime_probs[f"prob_{mapped_regime}"] += float(probability)
-
-    return {
-        "cluster": cluster,
-        "regime": regime,
-        "n_pca_components": model_bundle["n_pca_components"],
-        "explained_variance": model_bundle["explained_variance"],
-        **regime_probs,
-    }
-
-
 def detect_regimes(
     asset_train: pd.DataFrame,
     asset_test: pd.DataFrame,
@@ -216,23 +194,6 @@ def detect_regimes(
         "gmm_lower_bound": float(regime_model["gmm"].lower_bound_),
     }
     return labels_df.reset_index(), pd.DataFrame(stats_rows), diagnostics
-
-
-def walk_forward_regime_predictions(
-    full_data: pd.DataFrame,
-    feature_cols: list[str],
-    test_dates: list[pd.Timestamp],
-) -> pd.DataFrame:
-    rows = []
-    for date in test_dates:
-        history = full_data.loc[full_data.index < date, feature_cols].copy()
-        current = full_data.loc[date, feature_cols]
-        if history.empty:
-            continue
-        model_bundle = fit_regime_model(history)
-        result = predict_regime_from_model(model_bundle, current)
-        rows.append({"Date": date, **result, "Training_Window_Months": int(len(history))})
-    return pd.DataFrame(rows)
 
 
 def plot_regime_timeline(

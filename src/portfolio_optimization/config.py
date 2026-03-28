@@ -23,7 +23,6 @@ TEST_END = "2026-02-28"
 RANDOM_STATE = 42
 PCA_VARIANCE_THRESHOLD = 0.90
 NUM_REGIMES = 4
-RISK_AVERSION_GAMMA = 3.0
 
 CANONICAL_FILES = {
     "asset_train": DATA_DIR / "data_daily_2005_2024.csv",
@@ -61,39 +60,6 @@ REGIME_COLORS = {
     "Inflationary": "#FF9800",
     "Risk-Off": "#F44336",
     "Stagflation": "#9C27B0",
-}
-STRATEGY_ORDER = ["RegimeAware_ML", "EqualWeight", "ClassicalMarkowitz"]
-STRATEGY_COLORS = {
-    "RegimeAware_ML": "#1f77b4",
-    "EqualWeight": "#ff7f0e",
-    "ClassicalMarkowitz": "#2ca02c",
-}
-
-REGIME_BOUNDS = {
-    "Growth": {
-        "Nifty50_USD": (0.20, 0.50),
-        "SP500": (0.20, 0.50),
-        "Gold": (0.05, 0.20),
-        "USBond": (0.05, 0.20),
-    },
-    "Inflationary": {
-        "Nifty50_USD": (0.10, 0.30),
-        "SP500": (0.05, 0.25),
-        "Gold": (0.25, 0.50),
-        "USBond": (0.05, 0.25),
-    },
-    "Risk-Off": {
-        "Nifty50_USD": (0.00, 0.15),
-        "SP500": (0.00, 0.15),
-        "Gold": (0.20, 0.45),
-        "USBond": (0.30, 0.65),
-    },
-    "Stagflation": {
-        "Nifty50_USD": (0.00, 0.15),
-        "SP500": (0.00, 0.15),
-        "Gold": (0.30, 0.55),
-        "USBond": (0.15, 0.45),
-    },
 }
 
 DATASET_COLUMNS = {
@@ -169,11 +135,6 @@ TABLE_OUTPUTS = {
     "asset_return_covariance": TABLES_DIR / "asset_return_covariance.csv",
     "regime_labels": TABLES_DIR / "regime_labels.csv",
     "regime_asset_stats": TABLES_DIR / "regime_asset_stats.csv",
-    "backtest_returns": TABLES_DIR / "backtest_returns.csv",
-    "backtest_summary": TABLES_DIR / "backtest_summary.csv",
-    "portfolio_weights": TABLES_DIR / "portfolio_weights_test_2025_2026.csv",
-    "walk_forward_regimes": TABLES_DIR / "walk_forward_regimes_test_2025_2026.csv",
-    "walk_forward_model_summary": TABLES_DIR / "walk_forward_model_summary.csv",
     "overview": TABLES_DIR / "final_overview.md",
 }
 
@@ -183,7 +144,4 @@ FIGURE_OUTPUTS = {
     "asset_correlation_heatmap": FIGURES_DIR / "asset_correlation_heatmap.png",
     "supervised_model_comparison": FIGURES_DIR / "supervised_model_comparison.png",
     "regime_timeline": FIGURES_DIR / "regime_timeline.png",
-    "cumulative_return_comparison": FIGURES_DIR / "cumulative_return_comparison.png",
-    "drawdown_comparison": FIGURES_DIR / "drawdown_comparison.png",
-    "portfolio_weights": FIGURES_DIR / "portfolio_weights.png",
 }
