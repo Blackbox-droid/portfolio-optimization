@@ -1,0 +1,368 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{array}
+\usepackage{longtable}
+
+\definecolor{bitsblue}{RGB}{22, 68, 120}
+\definecolor{darkgray}{RGB}{70, 70, 70}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=bitsblue,
+    urlcolor=bitsblue,
+    citecolor=bitsblue
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small ML-Driven Portfolio Optimization}
+\rhead{\small EEE G513}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.65em}
+\setlist[itemize]{topsep=0.25em,itemsep=0.2em}
+\setlist[enumerate]{topsep=0.25em,itemsep=0.25em}
+\captionsetup{font=small,labelfont=bf}
+
+\newcommand{\reporttitle}{Machine Learning-Driven Portfolio Optimization}
+\newcommand{\reportsubtitle}{with Macroeconomic Regime Detection}
+\newcommand{\coursename}{EEE G513 -- Machine Learning for Electrical Engineers}
+\newcommand{\teamnames}{Dipesh Kohad \quad Nikhil Sheoran \quad Adit Sreenivasan}
+
+\begin{document}
+
+\pagenumbering{gobble}
+\begin{titlepage}
+    \centering
+    \vspace*{1.2cm}
+    {\Large \textcolor{darkgray}{BITS Pilani}\par}
+    \vspace{0.4cm}
+    {\large \coursename\par}
+    \vspace{2.2cm}
+    {\Huge \bfseries \textcolor{bitsblue}{\reporttitle}\par}
+    \vspace{0.25cm}
+    {\LARGE \bfseries \reportsubtitle\par}
+    \vspace{1.4cm}
+    {\large End-Semester Project Report\par}
+    \vspace{2.0cm}
+    {\large \textbf{Submitted by}\par}
+    \vspace{0.35cm}
+    {\large \teamnames\par}
+    \vfill
+    \begin{tabular}{>{\bfseries}ll}
+        Asset Universe & Nifty50\_USD, SP500, Gold, USBond \\
+        Main Methods & Supervised ML, PCA, GMM, K-Means, Markowitz Optimization \\
+        Evaluation & Walk-forward Backtest, Stress Testing, Sharpe Ratio, Drawdown \\
+    \end{tabular}
+    \vfill
+    {\large April 2026\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\newpage
+\pagenumbering{arabic}
+
+\begin{abstract}
+This project studies whether machine learning based return prediction and macroeconomic regime detection can improve portfolio allocation across multiple asset classes. We use four investable asset proxies: Nifty50 in USD terms, S\&P 500, Gold, and US Bonds. The pipeline combines asset-level exploratory analysis, supervised monthly return prediction, unsupervised macroeconomic regime detection, constrained Markowitz mean-variance optimization, walk-forward backtesting, and stress-period evaluation. The final results show that the ML-driven Markowitz strategy achieves the best risk-adjusted performance among the tested strategies, with an annualized return of 9.49\%, Sharpe ratio of 1.00, and maximum drawdown of -16.35\%.
+\end{abstract}
+
+\section{Introduction}
+
+Portfolio allocation is usually done using either simple fixed rules, such as equal weighting, or classical mean-variance optimization. The classical Markowitz approach is mathematically sound, but it depends heavily on estimates of expected returns and covariance. In practice, expected returns are difficult to estimate because market behavior changes with inflation, interest rates, currency movements, and volatility regimes.
+
+Our project attempts to make this process more adaptive. Instead of using only historical average returns, we train machine learning models to predict monthly asset returns from lagged macroeconomic features. We also identify macroeconomic regimes using PCA and clustering methods. These components are then connected to a constrained Markowitz optimizer and evaluated through a walk-forward backtest.
+
+\section{Research Question}
+
+The main question of the project is:
+
+\begin{quote}
+Can a machine learning pipeline that combines supervised return prediction with unsupervised macroeconomic regime detection improve the risk-adjusted performance of a Markowitz optimized portfolio compared to static baselines?
+\end{quote}
+
+\section{Asset Universe and Data}
+
+The final implemented asset universe contains four assets:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Nifty50\_USD}: Indian equity exposure converted into USD terms.
+    \item \textbf{SP500}: US equity exposure.
+    \item \textbf{Gold}: Commodity and safe-haven exposure.
+    \item \textbf{USBond}: Fixed-income proxy.
+\end{itemize}
+
+The training period is 2005--2024 and the held-out test data extends into 2025--2026. The canonical input files are stored under \texttt{data/processed}, with separate asset-price files and macroeconomic feature files for the training and test periods. The macroeconomic features include inflation, interest-rate, currency, commodity, volatility, liquidity, and activity indicators. Examples include CPI, repo rate, USD/INR, US VIX, oil prices, DXY, US rates, forex reserves, PMI, and money supply.
+
+\section{Work Completed Before Midsem}
+
+Before the midsem review, the focus was on building the foundation of the project:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Data preparation}: Collected and aligned asset price data and macroeconomic indicators on a common time axis. The loading and validation logic is organized in \path{src/portfolio_optimization/data_io.py}.
+    \item \textbf{Asset EDA}: Computed long-run CAGR, log-linear trend regression, return correlations, and covariance matrices through the EDA module and \path{scripts/run_asset_eda.py}.
+    \item \textbf{Supervised prediction}: Trained Linear Regression, SVR, Random Forest, and Gradient Boosting models to predict monthly log returns. The model definitions and evaluation logic are kept in \path{src/portfolio_optimization/models.py}.
+    \item \textbf{Initial regime detection}: Used PCA followed by Gaussian Mixture Models to identify macroeconomic regimes using \path{src/portfolio_optimization/regimes.py}.
+    \item \textbf{Mid-review artifacts}: Generated model metrics, prediction tables, asset trend plots, correlation heatmaps, and regime timeline plots under the mid-review artifact folders.
+\end{enumerate}
+
+At this stage, the project demonstrated that the data pipeline and ML components were working, but it did not yet include full portfolio optimization or backtesting.
+
+\section{Work Completed After Midsem}
+
+After midsem, the project was extended into a complete portfolio optimization system:
+
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{Constrained Markowitz optimizer}: Added a quadratic programming optimizer using \texttt{cvxpy}. The optimizer is implemented in \path{src/portfolio_optimization/optimizer.py} and maximizes expected return minus a risk penalty, subject to full investment and per-asset weight constraints.
+    \item \textbf{K-Means regime baseline}: Added K-Means alongside GMM and compared both regime detection methods using \path{scripts/run_kmeans_vs_gmm.py}.
+    \item \textbf{Walk-forward backtesting}: Implemented a monthly walk-forward backtest in the backtesting module, where each month uses only information available before that month.
+    \item \textbf{Strategy comparison}: Compared EqualWeight, ClassicalMarkowitz, MLMarkowitz, and MLRegimeAware strategies.
+    \item \textbf{Uniform bounds}: Applied the same 5\%--45\% allocation bound to every asset for all optimized strategies.
+    \item \textbf{Stress testing}: Evaluated strategy performance during historically volatile periods such as COVID-19, the 2011 Euro debt period, the 2013 taper tantrum, and the 2022 inflation shock.
+    \item \textbf{Final artifacts}: Generated final plots, result tables, wealth curves, drawdown curves, weight allocation plots, and the summary overview under \path{artifacts/figures/end_review} and \path{artifacts/tables/end_review}.
+\end{enumerate}
+
+\section{Methodology}
+
+\subsection{Asset Return Construction}
+
+Daily asset prices are resampled to monthly prices. This transformation is handled by the feature utilities in \path{src/portfolio_optimization/features.py}. Monthly log returns are then computed as:
+
+\[
+r_t = \log\left(\frac{P_t}{P_{t-1}}\right)
+\]
+
+where \(P_t\) is the asset price at the end of month \(t\). Log returns are used for modeling, while final portfolio accounting converts them back to simple returns.
+
+\subsection{Macroeconomic Feature Engineering}
+
+Macroeconomic variables are converted to monthly frequency and lagged by one month before prediction. This is important because the model should not use future macroeconomic information to predict current returns. Additional percentage-change features are created for selected variables such as oil, gold, USD/INR, VIX, and forex reserves. The complete supervised dataset construction is performed in \texttt{build\_supervised\_datasets}.
+
+\subsection{Supervised Return Prediction}
+
+For each asset, four supervised models are trained:
+
+\begin{itemize}[leftmargin=*]
+    \item Linear Regression
+    \item Support Vector Regression
+    \item Random Forest Regression
+    \item Gradient Boosting Regression
+\end{itemize}
+
+The goal is to predict expected monthly log returns. Model evaluation produces both a metrics table and a prediction table, saved as \path{model_metrics_test_2025_2026.csv} and \path{predictions_test_2025_2026.csv}. The model outputs are later used as the expected return vector \(\mu\) in Markowitz optimization.
+
+\subsection{Regime Detection}
+
+Regime detection is done using macroeconomic features. First, features are standardized and transformed using PCA. PCA reduces dimensionality while retaining about 90\% of the variance. Then two clustering methods are applied:
+
+\begin{itemize}[leftmargin=*]
+    \item Gaussian Mixture Models
+    \item K-Means clustering
+\end{itemize}
+
+The regime comparison produces \path{regime_labels.csv}, \path{kmeans_regime_labels.csv}, \path{regime_asset_stats.csv}, and \path{regime_method_comparison.csv}. The resulting clusters are mapped to interpretable regimes:
+
+\begin{itemize}[leftmargin=*]
+    \item Growth
+    \item Inflationary
+    \item Risk-Off
+    \item Stagflation
+\end{itemize}
+
+\subsection{Markowitz Optimization}
+
+The optimizer solves the following problem:
+
+\[
+\max_w \quad \mu^T w - \frac{\lambda}{2} w^T \Sigma w
+\]
+
+subject to:
+
+\[
+\sum_i w_i = 1
+\]
+
+\[
+0.05 \leq w_i \leq 0.45
+\]
+
+Here, \(w\) is the vector of portfolio weights, \(\mu\) is the expected return vector, \(\Sigma\) is the covariance matrix, and \(\lambda\) is the risk-aversion parameter. The bound values and strategy configuration are centralized in \path{src/portfolio_optimization/config.py}, which makes the optimizer settings reproducible.
+
+\subsection{Backtesting Setup}
+
+The walk-forward backtest uses an expanding training history. For each month:
+
+\begin{enumerate}[leftmargin=*]
+    \item Train ML models using only past data.
+    \item Predict next-month returns.
+    \item Estimate covariance from a 36-month rolling window.
+    \item Detect the current macroeconomic regime.
+    \item Compute portfolio weights.
+    \item Apply those weights to realized returns for that month.
+\end{enumerate}
+
+This setup avoids look-ahead bias and gives a more realistic evaluation than a single static train-test split. The end-to-end execution is available through \path{scripts/run_endsem_pipeline.py}, while the backtest outputs are written to \path{walk_forward_monthly_returns.csv}, \path{walk_forward_monthly_weights.csv}, and \path{walk_forward_strategy_summary.csv}.
+
+\section{Strategies Compared}
+
+\begin{table}[H]
+\centering
+\caption{Portfolio strategies evaluated in the final backtest}
+\begin{tabular}{lll}
+\toprule
+\textbf{Strategy} & \textbf{Expected Returns} & \textbf{Weight Rule} \\
+\midrule
+EqualWeight & Not used & 25\% in each asset \\
+ClassicalMarkowitz & Historical average returns & 5\%--45\% bounds \\
+MLMarkowitz & ML-predicted returns & 5\%--45\% bounds \\
+MLRegimeAware & ML-predicted returns + regime label & 5\%--45\% bounds \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+In the final version, MLRegimeAware uses the same 5\%--45\% bounds as MLMarkowitz. Therefore, the regime label is still computed and analyzed, but it does not change the allocation constraints. This makes the optimized strategies directly comparable under the same diversification rules.
+
+\section{Results}
+
+\subsection{Long-Run Asset Trends}
+
+\begin{table}[H]
+\centering
+\caption{Long-run asset trend summary over 2005--2024}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Asset} & \textbf{CAGR} & \textbf{Trend Regression \(R^2\)} \\
+\midrule
+Nifty50\_USD & 6.71\% & 0.794 \\
+SP500 & 8.73\% & 0.881 \\
+Gold & 5.77\% & 0.681 \\
+USBond & 4.17\% & 0.735 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Supervised Prediction Results}
+
+\begin{table}[H]
+\centering
+\caption{Best supervised model for each asset on the 2025--2026 test split}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Asset} & \textbf{Best Model} & \textbf{Test RMSE} & \textbf{Directional Accuracy} \\
+\midrule
+Gold & GradientBoosting & 0.0497 & 85.7\% \\
+Nifty50\_USD & RandomForest & 0.0419 & 42.9\% \\
+SP500 & RandomForest & 0.0388 & 57.1\% \\
+USBond & RandomForest & 0.0146 & 50.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Regime Detection Results}
+
+PCA retained 13 components, explaining about 90.43\% of the macroeconomic feature variance. GMM and K-Means were then compared. Their label agreement was 6.72\%, while the adjusted Rand index was 0.600. The low raw label agreement is not necessarily a failure because cluster labels can differ even when the underlying partitions are related; the adjusted Rand index is a better measure of clustering similarity.
+
+\begin{table}[H]
+\centering
+\caption{Regime shares identified by GMM and K-Means}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Regime} & \textbf{GMM Share} & \textbf{K-Means Share} \\
+\midrule
+Growth & 52.57\% & 15.02\% \\
+Inflationary & 15.02\% & 17.79\% \\
+Risk-Off & 4.74\% & 29.64\% \\
+Stagflation & 27.67\% & 37.55\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Walk-Forward Backtest Results}
+
+\begin{table}[H]
+\centering
+\caption{Final walk-forward strategy performance}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Strategy} & \textbf{Ann. Return} & \textbf{Ann. Vol.} & \textbf{Sharpe} & \textbf{Sortino} & \textbf{Max DD} \\
+\midrule
+EqualWeight & 8.76\% & 9.54\% & 0.92 & 1.55 & -14.87\% \\
+ClassicalMarkowitz & 7.67\% & 10.16\% & 0.75 & 1.29 & -19.92\% \\
+MLMarkowitz & 9.49\% & 9.46\% & 1.00 & 1.73 & -16.35\% \\
+MLRegimeAware & 9.49\% & 9.46\% & 1.00 & 1.73 & -16.35\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The MLMarkowitz strategy gives the best overall risk-adjusted result. It improves annualized return and Sharpe ratio compared to EqualWeight and ClassicalMarkowitz. ClassicalMarkowitz performs the weakest because historical average returns are noisy and can lead to less stable allocations.
+
+\section{Stress-Period Analysis}
+
+\begin{table}[H]
+\centering
+\caption{Stress-period total returns}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Stress Period} & \textbf{Classical} & \textbf{EqualWeight} & \textbf{MLMarkowitz} & \textbf{MLRegimeAware} \\
+\midrule
+COVID Crash 2020 & -6.65\% & -4.13\% & -5.39\% & -5.39\% \\
+Euro Debt 2011 & 7.79\% & -0.92\% & 6.15\% & 6.15\% \\
+Oil/China 2015--16 & -0.14\% & -3.06\% & -6.58\% & -6.58\% \\
+Russia/Inflation 2022 & -14.39\% & -12.92\% & -12.84\% & -12.84\% \\
+Taper Tantrum 2013 & -11.49\% & -8.25\% & -4.70\% & -4.70\% \\
+Volmageddon 2018 & -0.65\% & -1.81\% & 0.22\% & 0.22\% \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+The stress analysis shows that no strategy dominates in every crisis. MLMarkowitz performs better in some periods, such as the taper tantrum and Volmageddon, but equal weighting is more defensive in COVID. This is important because a higher long-run Sharpe ratio does not mean the strategy wins in every market shock.
+
+\section{Figures}
+
+The repository contains the following final figures under \texttt{artifacts/figures/end\_review}. These figures are generated directly by the pipeline scripts and summarize the key stages of the project:
+
+\begin{itemize}[leftmargin=*]
+    \item Asset CAGR comparison and log trend regression.
+    \item Asset correlation heatmap.
+    \item Supervised model comparison.
+    \item GMM and K-Means regime timelines.
+    \item Walk-forward wealth curve.
+    \item Drawdown curve.
+    \item Strategy weight allocation plot.
+    \item Stress-period return comparison.
+\end{itemize}
+
+\section{Interpretation}
+
+The final results support the idea that machine learning can help improve portfolio optimization when its predicted returns are used inside a constrained Markowitz framework. The MLMarkowitz strategy achieved the highest Sharpe ratio and annualized return in the walk-forward test.
+
+However, regime detection mainly added interpretability in the final setup. Since the final MLRegimeAware strategy uses the same 5\%--45\% bounds as MLMarkowitz, both strategies produce identical final performance. This is not a bug; it follows directly from using the same expected returns, covariance matrix, and constraints.
+
+\section{Practical Considerations}
+
+The final implementation uses a compact four-asset universe so that the complete pipeline can be evaluated consistently across a long historical window. Since the asset classes have different trading calendars, data availability patterns, and macroeconomic sensitivities, the project prioritizes clean alignment and reproducible backtesting over adding a larger number of partially overlapping instruments.
+
+Return forecasting is also a technically challenging problem because financial returns have low signal-to-noise ratios. For this reason, the project evaluates performance at the portfolio level rather than relying only on individual model prediction scores. The walk-forward backtest and stress-period analysis therefore serve as the main evidence for comparing strategies.
+
+\section{Conclusion}
+
+This project builds a complete machine learning driven portfolio optimization pipeline. Before midsem, we completed data preparation, EDA, supervised prediction, and initial PCA + GMM regime detection. After midsem, we added K-Means regime comparison, constrained Markowitz optimization, walk-forward backtesting, stress-period testing, and final result artifacts.
+
+The strongest result is that ML-predicted returns improved the constrained Markowitz strategy relative to both EqualWeight and ClassicalMarkowitz. The project also shows that macroeconomic regime detection provides useful context for understanding market conditions, even though the final uniform-bound setup does not use regimes to change allocation limits.
+
+\end{document}
