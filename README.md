@@ -1,26 +1,19 @@
-# ML-Driven Asset Analysis and Macroeconomic Regime Detection
+# ML-Driven Portfolio Optimization
 
-This repository contains the implementation for our EEE G513 course project.
-The current asset universe is `Nifty50_USD`, `SP500`, `Gold`, and `USBond`, where `USBond` uses the IEF ETF proxy.
-The main experiment trains on January 2005 to December 2024 and evaluates on January 2025 to February 2026.
-For the midsem checkpoint, the retained scope is limited to asset-level exploratory analysis, supervised return prediction, and macroeconomic regime detection.
+This repository contains the final version of our EEE G513 course project.
+It includes:
 
-## Current Project Scope
+- `optimizer.py` - constrained Markowitz mean-variance QP (`cvxpy`) with 5%-45% per-asset bounds.
+- `regimes.py` - K-Means regime baseline alongside GMM, plus side-by-side comparison metrics.
+- `backtest.py` - monthly walk-forward backtest across the full 2005-2026 sample, stress-period analysis, and plotting helpers.
+- `scripts/run_walk_forward_backtest.py` - runs the 4-strategy walk-forward comparison.
+- `scripts/run_kmeans_vs_gmm.py` - GMM vs K-Means regime comparison.
+- `scripts/build_final_overview.py` - writes a consolidated markdown report.
+- `scripts/run_endsem_pipeline.py` - master entrypoint that chains all stages.
 
-- **Stage 1:** asset EDA summarizes long-run trend, CAGR, and cross-asset diversification using log-linear trend analysis plus return correlation and covariance.
-- **Stage 2:** supervised models predict monthly log returns for all four assets using lagged macro features.
-- **Stage 3:** a single cross-asset regime model uses merged India and global macro features with PCA plus GMM.
+Asset universe: `Nifty50_USD`, `SP500`, `Gold`, `USBond`. Bitcoin is intentionally not included in this project.
 
-## Dataset Summary
-
-- `data_daily_2005_2024.csv`: daily asset prices for the training period.
-- `data_daily_2025_2026.csv`: daily asset prices for the held-out test period.
-- `macro_finaldata_2005_2024.csv`: monthly global macro features for the training period.
-- `macro_finaldata_2025_2026.csv`: monthly global macro features for the test period.
-- `macro_finaldata_india_14.csv`: monthly India-focused macro features for the training period.
-- `macro_india_2025_2026.csv`: monthly India-focused macro features for the test period.
-
-## Reproduce the Pipeline
+## Reproduce
 
 Install dependencies:
 
@@ -30,54 +23,54 @@ source .venv/bin/activate
 python3 -m pip install -r requirements.txt
 ```
 
-Run the three retained stages from the repository root:
+Run the full pipeline:
+
+```bash
+python3 scripts/run_endsem_pipeline.py
+```
+
+Or run individual stages:
 
 ```bash
 python3 scripts/run_asset_eda.py
 python3 scripts/run_supervised_prediction.py
-python3 scripts/run_regime_detection.py
+python3 scripts/run_kmeans_vs_gmm.py
+python3 scripts/run_walk_forward_backtest.py
+python3 scripts/build_final_overview.py
 ```
 
 ## Expected Output Files
 
-Tables under `artifacts/tables/mid_review`:
+Under `artifacts/tables/end_review`:
 
-- `model_metrics_test_2025_2026.csv`
-- `predictions_test_2025_2026.csv`
-- `asset_trend_regression_summary.csv`
-- `asset_return_correlation.csv`
-- `asset_return_covariance.csv`
-- `regime_labels.csv`
-- `regime_asset_stats.csv`
+- `asset_trend_regression_summary.csv`, `asset_return_correlation.csv`, `asset_return_covariance.csv`
+- `model_metrics_test_2025_2026.csv`, `predictions_test_2025_2026.csv`
+- `regime_labels.csv` (GMM), `kmeans_regime_labels.csv` (K-Means)
+- `regime_asset_stats.csv`, `regime_method_comparison.csv`
+- `walk_forward_monthly_returns.csv`, `walk_forward_monthly_weights.csv`, `walk_forward_strategy_summary.csv`
+- `stress_period_summary.csv`
 - `final_overview.md`
 
-Figures under `artifacts/figures/mid_review`:
+Under `artifacts/figures/end_review`:
 
+- `asset_trend_regression.png`, `asset_cagr_comparison.png`, `asset_correlation_heatmap.png`
 - `supervised_model_comparison.png`
-- `asset_trend_regression.png`
-- `asset_cagr_comparison.png`
-- `asset_correlation_heatmap.png`
-- `regime_timeline.png`
+- `regime_timeline.png`, `regime_method_comparison.png`
+- `walk_forward_wealth_curve.png`, `walk_forward_drawdown.png`, `walk_forward_weights_stacked.png`
+- `stress_period_returns.png`
 
-## Key Outputs
+## Strategy Definitions
 
-- Asset trend and CAGR summary: `artifacts/tables/mid_review/asset_trend_regression_summary.csv`
-- Asset return correlation: `artifacts/tables/mid_review/asset_return_correlation.csv`
-- Supervised model metrics: `artifacts/tables/mid_review/model_metrics_test_2025_2026.csv`
-- Regime labels and probabilities: `artifacts/tables/mid_review/regime_labels.csv`
-- Consolidated summary note: `artifacts/tables/mid_review/final_overview.md`
+| Strategy | Expected returns | Covariance | Weight bounds |
+| --- | --- | --- | --- |
+| EqualWeight | n/a | n/a | 1/N constant |
+| ClassicalMarkowitz | rolling historical mean of monthly log returns | 36-month rolling covariance | default per-asset bounds |
+| MLMarkowitz | monthly ML prediction (Random Forest by default) | 36-month rolling covariance | default per-asset bounds |
+| MLRegimeAware | monthly ML prediction | 36-month rolling covariance | same 5%-45% per-asset bounds |
 
-## Known Limitations
+## Notes And Caveats
 
-- Stages 2 and 3 currently expose fixed-split summary outputs for the checkpoint.
-- The log-linear trend regression is descriptive EDA for long-run trend/CAGR analysis; it is not used as the main predictive model in Stage 2.
-- GMM is the canonical regime model for mid-review; K-Means remains future work.
-- The asset universe is limited to the current 4-asset prototype and does not yet include Bitcoin.
-- The India-specific training macro file uses the cleaner `macro_finaldata_india_14.csv` feature set for mid-review consistency.
-
-## Repo Layout
-
-- `src/portfolio_optimization`: reusable pipeline modules.
-- `scripts`: canonical entrypoints.
-- `data/processed`: canonical input datasets used by the pipeline.
-- `artifacts`: generated tables and figures for review and presentation.
+- Walk-forward warm-up is 60 months; the ML-driven backtest starts after the initial 5-year history window.
+- Covariance is estimated from a 36-month rolling window of realized monthly log returns and projected onto the PSD cone for numerical stability.
+- All optimized strategies use the same 5%-45% per-asset bounds for a consistent comparison.
+- All reported portfolio results are computed from monthly log-return forecasts and converted to simple returns for portfolio accounting.

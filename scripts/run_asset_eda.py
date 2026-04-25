@@ -1,3 +1,4 @@
+"""Stage 1 - asset EDA."""
 from pathlib import Path
 import sys
 
@@ -20,7 +21,6 @@ from portfolio_optimization.eda import (
 
 def main() -> None:
     ensure_output_dirs()
-
     asset_train, _ = load_asset_frames()
 
     trend_summary, trend_results = build_asset_trend_summary(asset_train)
@@ -34,13 +34,7 @@ def main() -> None:
     plot_cagr_comparison(trend_summary, FIGURE_OUTPUTS["asset_cagr_comparison"])
     plot_correlation_heatmap(corr_df, FIGURE_OUTPUTS["asset_correlation_heatmap"])
 
-    print("Saved supplementary asset EDA outputs:")
-    print(f"  {TABLE_OUTPUTS['asset_trend_summary']}")
-    print(f"  {TABLE_OUTPUTS['asset_return_correlation']}")
-    print(f"  {TABLE_OUTPUTS['asset_return_covariance']}")
-    print(f"  {FIGURE_OUTPUTS['asset_trend_regression']}")
-    print(f"  {FIGURE_OUTPUTS['asset_cagr_comparison']}")
-    print(f"  {FIGURE_OUTPUTS['asset_correlation_heatmap']}")
+    print("Stage 1 (asset EDA) complete.")
 
 
 if __name__ == "__main__":

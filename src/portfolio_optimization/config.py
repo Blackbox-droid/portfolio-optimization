@@ -7,8 +7,8 @@ ROOT_DIR = SRC_DIR.parent
 
 DATA_DIR = ROOT_DIR / "data" / "processed"
 ARTIFACTS_DIR = ROOT_DIR / "artifacts"
-FIGURES_DIR = ARTIFACTS_DIR / "figures" / "mid_review"
-TABLES_DIR = ARTIFACTS_DIR / "tables" / "mid_review"
+FIGURES_DIR = ARTIFACTS_DIR / "figures" / "end_review"
+TABLES_DIR = ARTIFACTS_DIR / "tables" / "end_review"
 
 ASSETS = ["Nifty50_USD", "SP500", "Gold", "USBond"]
 ASSET_COLORS = {
@@ -127,6 +127,59 @@ DATASET_COLUMNS = {
     ],
 }
 
+# Uniform per-asset weight bounds (long-only). Used by every Markowitz variant
+# so all optimized strategies are compared under the same 5%-45% constraints.
+DEFAULT_WEIGHT_BOUNDS = {
+    "Nifty50_USD": (0.05, 0.45),
+    "SP500": (0.05, 0.45),
+    "Gold": (0.05, 0.45),
+    "USBond": (0.05, 0.45),
+}
+
+# Keep regime-aware models on the same bounds as the other strategies.
+REGIME_WEIGHT_BOUNDS = {
+    regime: DEFAULT_WEIGHT_BOUNDS.copy()
+    for regime in REGIME_NAMES
+}
+
+MV_RISK_AVERSION = 5.0
+
+WALK_FORWARD = {
+    "min_train_months": 60,
+    "cov_lookback_months": 36,
+}
+
+STRESS_PERIODS = {
+    "GFC_2008_2009": ("2008-09-01", "2009-06-30"),
+    "EuroDebt_2011": ("2011-07-01", "2011-12-31"),
+    "Taper_Tantrum_2013": ("2013-05-01", "2013-09-30"),
+    "Oil_China_2015_2016": ("2015-08-01", "2016-02-29"),
+    "Volmageddon_2018": ("2018-01-01", "2018-04-30"),
+    "COVID_Crash_2020": ("2020-02-01", "2020-04-30"),
+    "Russia_Inflation_2022": ("2022-01-01", "2022-10-31"),
+}
+
+STRATEGY_ORDER = [
+    "EqualWeight",
+    "ClassicalMarkowitz",
+    "MLMarkowitz",
+    "MLRegimeAware",
+]
+
+STRATEGY_LABELS = {
+    "EqualWeight": "Equal-Weight",
+    "ClassicalMarkowitz": "Classical Markowitz",
+    "MLMarkowitz": "ML-Driven Markowitz",
+    "MLRegimeAware": "ML + Regime-Aware",
+}
+
+STRATEGY_COLORS = {
+    "EqualWeight": "#7f7f7f",
+    "ClassicalMarkowitz": "#1f77b4",
+    "MLMarkowitz": "#ff7f0e",
+    "MLRegimeAware": "#d62728",
+}
+
 TABLE_OUTPUTS = {
     "model_metrics": TABLES_DIR / "model_metrics_test_2025_2026.csv",
     "predictions": TABLES_DIR / "predictions_test_2025_2026.csv",
@@ -135,6 +188,12 @@ TABLE_OUTPUTS = {
     "asset_return_covariance": TABLES_DIR / "asset_return_covariance.csv",
     "regime_labels": TABLES_DIR / "regime_labels.csv",
     "regime_asset_stats": TABLES_DIR / "regime_asset_stats.csv",
+    "kmeans_labels": TABLES_DIR / "kmeans_regime_labels.csv",
+    "regime_method_comparison": TABLES_DIR / "regime_method_comparison.csv",
+    "walk_forward_returns": TABLES_DIR / "walk_forward_monthly_returns.csv",
+    "walk_forward_weights": TABLES_DIR / "walk_forward_monthly_weights.csv",
+    "walk_forward_summary": TABLES_DIR / "walk_forward_strategy_summary.csv",
+    "stress_summary": TABLES_DIR / "stress_period_summary.csv",
     "overview": TABLES_DIR / "final_overview.md",
 }
 
@@ -144,4 +203,9 @@ FIGURE_OUTPUTS = {
     "asset_correlation_heatmap": FIGURES_DIR / "asset_correlation_heatmap.png",
     "supervised_model_comparison": FIGURES_DIR / "supervised_model_comparison.png",
     "regime_timeline": FIGURES_DIR / "regime_timeline.png",
+    "regime_method_comparison": FIGURES_DIR / "regime_method_comparison.png",
+    "walk_forward_wealth": FIGURES_DIR / "walk_forward_wealth_curve.png",
+    "walk_forward_drawdown": FIGURES_DIR / "walk_forward_drawdown.png",
+    "walk_forward_weights": FIGURES_DIR / "walk_forward_weights_stacked.png",
+    "stress_returns": FIGURES_DIR / "stress_period_returns.png",
 }
